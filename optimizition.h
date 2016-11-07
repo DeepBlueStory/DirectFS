@@ -13,6 +13,7 @@ typedef struct PWM {
 } PWM;
 
 const double mindouble = std::numeric_limits<double>::min();
+const double maxdouble = std::numeric_limits<double>::max();
 const double convergence = 0.001;
 int m_lmotif = 8;
 std::vector<char> DNAalphabet = {
