@@ -27,12 +27,16 @@ PWM optimizePWM(PWM w0) {
     return wk1;
 }
 
+PWM minFETSwb(PWM wk) {
+    
+}
+
 PWM minFETSw(PWM wk, int i4l1) {
     int ic = i4l1 / 4;
-    char cc = DNAalphabet[ic];
-
+    char cc = DNAalphabet[i4l1 % 4];
     std::map<double, int> nf;
     std::map<double, int> nb;
+    
     for(auto ps : Psequence) {
         double te;
         if(teOfS(ps, wk, te, ic, cc)) {
@@ -56,17 +60,50 @@ PWM minFETSw(PWM wk, int i4l1) {
     accadjMap(nf, wk.F);
     accadjMap(nb, wk.B);
 
-    std::map<double, int>::iterator inf = nf.begin();
-    std::map<double, int>::iterator inb = nb.begin();
+    std::map<double, int>::iterator inf = --nf.end();
+    std::map<double, int>::iterator inb = --nb.end();
+    if(inf->first > inb->first) {
+        std::pair<double, int> p(inf->first, inb->second);
+        nb.erase(inb);
+        nb.insert(p);
+    }else if(inf->first < inb->first) {
+        std::pair<double, int> p(inb->first, inf->second);
+        nf.erase(inf);
+        nf.insert(p);
+    }
 
+    double minfetsw = maxdouble;
+    int mf;
+    int mb;
+    double t;
+    std::vector<double> w;
     while(inf != nf.end() && inb != nb.end()) {
-
-
+        if(inf == nf.end()) --inf;
+        if(inb == nb.end()) --inb;
+        double fet = FEST(inf->second, inb->second);
+        if(minfetsw > fet) {
+            minfetsw = fet;
+            mf = inf->second;
+            mb = inb->second;
+            t = inf->first < inb->first ? inf->first : inb->first;
+        }
+        
+        if(inf->first > inb->first) ++inb;
+        else if(inf->first < inb->first) ++inf;
+        else {++inb; ++inf;}
+    }
+    for(auto i = wk.w.begin(); i != wk.w.end(); ++i) {
+        w.push_back(*i);
+    }
+    w[i4l1] += t;
     
+    PWM p;
+    p.w = w;
+    p.F = mf;
+    p.B = mb;
+    p.FETSw = minfetsw;
 
-    //调整
-    //累加
-    //求最大。
+    return p;
 
 }
 
@@ -77,25 +114,29 @@ void accadjMap(std::map<double, int> &nm, int reference) {
             });
     std::map<double, int>::iterator right;
     std::map<double, int>::iterator left;
-    if(itnm->first == reference) {
-        left = itnm;
-        right = ++itnm;
-    }else {
-        right = itnm;
-        left = --itnm;
-    }
+    left = itnm;
+    right = ++itnm;
     int curr;
-    curr = reference;
-    for(auto i = right; i != nm.end(); ++i) {
-        i->second += curr;
-        curr = i->second;
-    }
-    curr = reference;
+
+    curr = reference + left->second;
     for(auto i = left; i != nm.begin(); --i) {
-        left->second = curr;
+        i->second = curr - i->second;
         curr -= left->second;
     }
-    nm.begin()->second = curr;
+    nm.begin()->second = curr - nm.begin()->second;
+
+    curr = reference + left->second;
+    for(auto i = right; i != nm.end(); ++i) {
+        i->second = curr;
+        curr += i->second;
+    }
+    //这里我为了对最后一个分段做处理，多加入一个te。
+    //这个te的取值为最后一个te+1
+    //如果太大，可以改
+    //也有可能太小，需要取一个合适的值
+    double te = (--nm.end())->first;
+    te += 1;
+    nm[te] = curr;
 }
 
 bool teOfS(std::string &S, PWM wk, double &te, int ic, char cc) {
@@ -106,10 +147,10 @@ bool teOfS(std::string &S, PWM wk, double &te, int ic, char cc) {
     for(unsigned long istart = 0; istart <S.size()-m_lmotif+1; ++istart) {
         if(S[istart+ic] == cc) {
             hasI = true;
-            tI = max(tI, xTwk(S, istart, wk, m_lmotif));
+            tI = std::max(tI, xTwk(S, istart, wk, m_lmotif));
         }else {
             hasO = true;
-            tO = max(tO, xTwk(S, istart, wk, m_lmotif));
+            tO = std::max(tO, xTwk(S, istart, wk, m_lmotif));
         }
     }
     if((hasI && !hasO) || ((hasI && hasO) && tO <=0)) {
