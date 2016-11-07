@@ -3,15 +3,8 @@
 #include <string>
 #include <limits>
 #include <algorithm>
-typedef struct PWM {
-    std::vector<double> w;
-    int F;
-    int B;
-    double FETSw;
-} PWM;
+#include "optimizition.h"
 
-const double convergence = 0.001;
-int m_lmotif = 8;
 
 PWM optimizePWM(PWM w0) {
     PWM wk = w0;
@@ -34,10 +27,6 @@ PWM optimizePWM(PWM w0) {
     return wk1;
 }
 
-std::vector<char> DNAalphabet = {
-    'A', 'C', 'G', 'T'};
-std::vector<std::string> Psequence;
-std::vector<std::string> Nsequence;
 PWM minFETSw(PWM wk, int i4l1) {
     int ic = i4l1 / 4;
     char cc = DNAalphabet[ic];
@@ -45,28 +34,82 @@ PWM minFETSw(PWM wk, int i4l1) {
     std::map<double, int> nf;
     std::map<double, int> nb;
     for(auto ps : Psequence) {
-        //
-        //
+        double te;
+        if(teOfS(ps, wk, te, ic, cc)) {
+            if(nf.find(te) == nf.end()) {
+                nf[te] = 1;
+            }else {
+                nf[te] ++;
+            }
+        }
     }
     for(auto ns : Nsequence) {
-        //
-        //
+        double te;
+        if(teOfS(ns, wk, te, ic, cc)) {
+            if(nb.find(te) == nb.end()) {
+                nb[te] = 1;
+            }else {
+                nb[te] ++;
+            }
+        }
     }
+    accadjMap(nf, wk.F);
+    accadjMap(nb, wk.B);
+
+    std::map<double, int>::iterator inf = nf.begin();
+    std::map<double, int>::iterator inb = nb.begin();
+
+    while(inf != nf.end() && inb != nb.end()) {
+
+
+    
+
+    //调整
+    //累加
+    //求最大。
+
 }
 
-const double mindouble = std::numeric_limits<double>::min();
+void accadjMap(std::map<double, int> &nm, int reference) {
+    auto itnm = std::lower_bound(nm.begin(), nm.end(), reference, 
+            [](std::pair<double, int> a, std::pair<double, int> b) {
+                return a.first < b.first;
+            });
+    std::map<double, int>::iterator right;
+    std::map<double, int>::iterator left;
+    if(itnm->first == reference) {
+        left = itnm;
+        right = ++itnm;
+    }else {
+        right = itnm;
+        left = --itnm;
+    }
+    int curr;
+    curr = reference;
+    for(auto i = right; i != nm.end(); ++i) {
+        i->second += curr;
+        curr = i->second;
+    }
+    curr = reference;
+    for(auto i = left; i != nm.begin(); --i) {
+        left->second = curr;
+        curr -= left->second;
+    }
+    nm.begin()->second = curr;
+}
+
 bool teOfS(std::string &S, PWM wk, double &te, int ic, char cc) {
     double tI = mindouble;
     double tO = mindouble;
     bool hasI = false;
     bool hasO = false;
-    for(int istart = 0; istart <S.size()-m_lmotif+1; ++istart) {
+    for(unsigned long istart = 0; istart <S.size()-m_lmotif+1; ++istart) {
         if(S[istart+ic] == cc) {
             hasI = true;
-            tI = max(tI, xTwk(S, istart, wk));
+            tI = max(tI, xTwk(S, istart, wk, m_lmotif));
         }else {
             hasO = true;
-            tO = max(tO, xTwk(S, istart, wk));
+            tO = max(tO, xTwk(S, istart, wk, m_lmotif));
         }
     }
     if((hasI && !hasO) || ((hasI && hasO) && tO <=0)) {
@@ -77,6 +120,26 @@ bool teOfS(std::string &S, PWM wk, double &te, int ic, char cc) {
     }
 }
 
-double xTwk(std::string &S, int istart, PWM wk) {
-    for(int i = istart; i < istart + m_lmotif; ++i) {
-
+double xTwk(std::string &S, int istart, PWM wk, int length) {
+    double res = 0;
+    auto w = wk.w;
+    for(int i = 0; i <length; ++i) {
+        char c = S[istart + i];
+        switch(c) {
+            case 'A' :
+                res += w[4*i+0];
+                break;
+            case 'C' :
+                res += w[4*i+1];
+                break;
+            case 'G' :
+                res +=w[4*i+2];
+                break;
+            case 'T' :
+                res += w[4*i+3];
+                break;
+        }
+    }
+    res += w[4*length];
+    return res;
+}
