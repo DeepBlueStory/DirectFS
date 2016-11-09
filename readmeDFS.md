@@ -53,3 +53,9 @@ void deletePWMInPositiveSet(const std::vector<double>& w,
 ### slidewindow 滑动窗口
 各种形式的滑动窗口
 
+### fet 菲舍精确检验
+直接计算，获得菲舍精确检验的准确值。
+
+### fet_VAGUE 模糊菲舍精确检验
+目的是在vector<string, mf>和vector<string, mb>向量中找出取得fet最小的string。
+

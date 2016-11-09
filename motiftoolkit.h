@@ -5,12 +5,30 @@
 #include <string>
 #include <unordered_map>
 
+//here to mark the encoding method
+//A 1000
+//C 0100
+//G 0010
+//T 0001
+
+std::vector<char> DNAalphabet = {'A', 'C', 'G', 'T'};
+
+
 //read fasta file
 //return the vector of sequence of positive set
+//for c++11 just call this function with no need to consider the efficiency of copy
 //
 //filepath : the path of fasta file
 
 std::vector<std::string> readFasta(const std::string& filepath);
+
+
+//get the reverse complementary DNA trand
+//return the complementary trand string
+//
+//sequence : the positive DNA trand
+
+std::string getReverseComplementaryTrand(const std::string& sequence);
 
 
 //find all the string in seqs whoes size is length
@@ -42,9 +60,10 @@ findSeed(const std::unordered_map<std::string, int>& mapPSeq,
 //return the pwm of seed
 //
 //seed : const reference of seed.
-//hasb : const bool value of pwm means whether need to add 'b' after pwm
+//minconst : min const for log pwm
+//b : const double value of pwm means the threshold of PWM
 
-std::vector<double> seedToPWM(const std::string& seed, const bool hasb = false);
+std::vector<double> seedToPWM(const std::string& seed, const double minconst, const double b);
 
 
 //get the result of x(string) multiplied w(vector)
@@ -57,16 +76,6 @@ std::vector<double> seedToPWM(const std::string& seed, const bool hasb = false);
 double xTwk(const std::string &S, 
         const std::vector<double>& wk, 
         const int istart = 0);
-
-
-//get the result of x(vector) multiplied w(vector)
-//return the result
-//
-//S : const reference of x
-//wk : const reference of w
-
-double xTwk(const std::vector<bool>& S, 
-        const std::vector<double>& wk);
 
 
 //delete motif in every positive sequence that have highest macthing score of w.
@@ -83,6 +92,7 @@ double xTwk(const std::vector<bool>& S,
 void deletePWMInPositiveSet(const std::vector<double>& w, 
         std::vector<std::string>& seqP, 
         std::unordered_map<std::string, int>& mapPSeq, 
+        double shreshold,
         void (*pfprint) (const int iseq, 
             const std::string motif, 
             const bool isPosStrand) = NULL);
