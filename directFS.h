@@ -1,56 +1,53 @@
 #ifndef DIRECTFS_H
 #define DIRECTFS_H
 
+#include <map>
 #include <vector>
-#include <limits>
-#include "motifbase.h"
-
-const double MIN_DOUBLE = std::numeric_limits<double>::min();
-const double MAX_DOUBLE = std::numeric_limits<double>::max();
-const std::vector<char> DNAalphabet = {'A', 'C', 'G', 'T'};
-
-typedef struct PWM {
-    std::vector<double> w;  //the pwm vector which lenght is 4l+1
-    int f;                  //the appearance time of w in positive set
-    int b;                  //the appearance time of w in negative set
-    double fetsw;           //the fet of w
-} PWM;
+#include <unordered_map>
+#include "./Base/motifbase.h"
+#include "./Base/pwm.h"
+#include "./Base/seed.h"
 
 class DirectFS : private MotifBase
 {
-private:
-    //when to stop?
-    double m_sshd;
-
-    //all the motif pwm
-    std::vector<PWM> m_pwms;
-
-    static constexpr double CONVERGENCE = 0.001;
 
 public:
-    //read the positive & negative set.
-    //
-    //ls means seed length
-    //lm means motif length
-    //fp means filename of positive set
-    //fn means filename of negative set
-    //shreshold_b means the shreshold that can't make a pwm to be a motif
-    DirectFS(std::string fp, std::string fn, int ls, int lm, double shreshold);
+    DirectFS(std::string filePathPos, std::string filePathNeg, 
+            int lenSeed, int lenMotif, double b);
     
-    virtual ~DirectFS();
-
-    //find all the pwm
     void findAllPwm();
 
 private:
-    //optimize pwm
-    //return the fet of pwm.
-    double optimizePWM();
+    double optimizePWM(PWM &pwm);
 
-    //extend pwm from length(seed) to length(motif)
-    void extendPWM();
- 
+    double extendPWM(PWM &pwm);
 
+    PWM initANewPwm();
+
+    int whichTypeOfSeq(const PWM& wk, const std::string& seq, const int ei,
+            double& maxIs, double& maxOs);
+
+    int whichScenarioOfSeq(const int& typeOfSeq, const double& maxOs);
+
+    void getAllBreakPoint(std::map<double, int>& breakPointFg, 
+            std::map<double, int>& breakPointBg, 
+            const PWM& wk, const int& ei);
+
+    double getOptimalStepSize(const PWM& wk, const int ei, int& ocnFg, int& ocnBg);
+    
+    double getMinFETofIDim(PWM& wk, int i);
+
+    void iteratedOptimition(PWM& wk);
+
+private:
+    double b_;
+    //all the motif pwm
+    std::vector<PWM> pwms_;
+
+    //all the lmers and its occurence number in both foreground and background
+    std::unordered_map<std::string, int> lmerInFg_;
+    std::unordered_map<std::string, int> lmerInBg_;
 };
+
 
 #endif /* DIRECTFS_H */
