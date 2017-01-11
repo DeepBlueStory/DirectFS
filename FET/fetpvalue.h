@@ -20,6 +20,7 @@
 #include <cmath>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 constexpr double LOG_ZERO = -1e10;
 constexpr double LOG_SMALL = -0.5e10;
@@ -183,8 +184,7 @@ private:
         //return log_slarg;
         return log_sright;
     } 
-    double getIndexOfThreshold(std::vector<int>& ocnPos, std::vector<int>& ocnNeg,
-            int nPos, int nNeg)
+    int getIndexOfThreshold(std::vector<int>& ocnPos, std::vector<int>& ocnNeg)
     {
         int intervalMax = 0;
         int index = 0;
@@ -201,7 +201,7 @@ private:
             }
                 
         }
-        return getLogFETPvalue(ocnPos[index], ocnNeg[index], nPos, nNeg);
+        return index;
     }
 
 public:
@@ -216,14 +216,14 @@ public:
     int getIndexOfLeastPvalue(std::vector<int>& ocnPos, std::vector<int>& ocnNeg,
             int nPos, int nNeg)
     {
-        double threshold = getIndexOfThreshold(ocnPos, ocnNeg, nPos, nNeg);
+        int index = getIndexOfThreshold(ocnPos, ocnNeg);
+        double threshold = getLogFETPvalue(ocnPos[index], nPos, ocnNeg[index], nNeg);
 
-        int index = 0;
         int size = (int) ocnPos.size();
+        int n = nPos + nNeg;
         for(int i = 0; i < size; ++i)
         {
-            int n = nPos + nNeg;
-            int row1 = ocnNeg[i];
+            int row1 = nNeg;
             int col1 = n - ocnPos[i] - ocnNeg[i];
             int max = row1 < col1 ? row1 : col1;
             double log_prob = log_hyper0(nNeg - ocnNeg[i], row1, col1, n);
